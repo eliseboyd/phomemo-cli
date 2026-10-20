@@ -12,7 +12,7 @@
     "serve:dev": "node src --port 4000 --cache --debug --device 'M02 Pro'",
     "print": "node src",
     "print:test": "node src --file '' --debug",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "dependencies": {
     "@abandonware/noble": "^1.9.2-21",

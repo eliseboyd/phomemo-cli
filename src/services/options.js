@@ -5,7 +5,12 @@
  * @property  {boolean}   [dither]    Whether to dither the image
  * @property  {boolean}   [cache]     Whether to maintain an image cache
  * @property  {boolean}   [debug]     Whether to dump debug messages
+ * @property  {number}    [chunk]       Bytes per Bluetooth write (see print.js)
+ * @property  {number}    [chunkDelay]  Pause between unacknowledged writes, ms
  */
+
+export const DEFAULT_CHUNK = 128
+export const DEFAULT_CHUNK_DELAY = 10
 
 /**
  * Helper function to Parse CLI options or HttpRequest query
@@ -13,12 +18,14 @@
  * @param     {object}    options
  * @returns   {Options}
  */
-export function parseOptions ({ scale, dither, cache, debug } = {}) {
+export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay } = {}) {
   return {
     scale: num(scale),
     dither: bool(dither),
     cache: bool(cache),
     debug: bool(debug),
+    chunk: num(chunk),
+    chunkDelay: num(chunkDelay),
   }
 }
 
@@ -36,6 +43,8 @@ export function mergeOptions (options = {}, query = {}) {
     dither: query.dither ?? options.dither,
     cache: options.cache,
     debug: options.debug,
+    chunk: query.chunk ?? options.chunk,
+    chunkDelay: query.chunkDelay ?? options.chunkDelay,
   }
 }
 

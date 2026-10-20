@@ -1,6 +1,7 @@
 import Fs from 'fs'
 import { prepareImage } from './image.js'
 import { log } from './utils.js'
+import { DEFAULT_CHUNK, DEFAULT_CHUNK_DELAY } from './options.js'
 
 // ---------------------------------------------------------------------------------------------------------------------
 // constants
@@ -23,34 +24,88 @@ export const IMAGE_WIDTH = BYTES_PER_LINE * 8
  * @returns {Promise<sharp.Metadata>}
  */
 export async function print (characteristic, file, options) {
-  return new Promise(async (resolve, reject) => {
-    // check file exists
-    if (!file) {
-      return reject(`Missing file path`)
+  // check file exists
+  if (!file) {
+    throw new Error('Missing file path')
+  }
+  if (!Fs.existsSync(file)) {
+    throw new Error(`File "${file}" not found`)
+  }
+
+  // options
+  const { scale, dither, debug, chunk, chunkDelay } = options
+
+  // process image
+  const image = await prepareImage(file, IMAGE_WIDTH, scale, dither, debug)
+
+  // prepare data
+  const { data, metadata } = await prepareData(image)
+
+  // print: one job at a time, so two requests can't interleave their bytes on the characteristic
+  if (characteristic) {
+    log(`Printing image "${file}" (${metadata.width}×${metadata.height}, ${Math.round(data.length / 1024)} KB) ...`)
+    await enqueue(() => sendToPrinter(characteristic, data, { chunk, chunkDelay, debug }))
+    log('Sent')
+  }
+
+  return metadata
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// sending
+// ---------------------------------------------------------------------------------------------------------------------
+
+let queue = Promise.resolve()
+
+function enqueue (job) {
+  const next = queue.then(job, job)
+  queue = next.catch(() => {})
+  return next
+}
+
+/**
+ * Stream printer data to the Bluetooth characteristic in small chunks.
+ *
+ * One big write (what this used to do) overflows the printer's buffer on long images: the printer prints
+ * what it received and stops half way. Each chunk is written as a write *request* where the characteristic
+ * supports it, so the printer acknowledges it before the next one goes out; otherwise as a write command
+ * with a short pause between chunks.
+ *
+ * @param   {object}    characteristic    noble characteristic (write / writeWithoutResponse)
+ * @param   {Buffer}    data              The printer bytes
+ * @param   {object}    [options]
+ * @param   {number}    [options.chunk]        Bytes per write (default 128)
+ * @param   {number}    [options.chunkDelay]   Pause between unacknowledged writes, in ms (default 10)
+ * @param   {boolean}   [options.debug]
+ * @returns {Promise<{chunks: number, withResponse: boolean}>}
+ */
+export async function sendToPrinter (characteristic, data, { chunk, chunkDelay, debug } = {}) {
+  const size = Math.max(1, Math.floor(chunk ?? DEFAULT_CHUNK))
+  const pause = Math.max(0, chunkDelay ?? DEFAULT_CHUNK_DELAY)
+  const properties = characteristic.properties ?? []
+  const withResponse = properties.includes('write') || !properties.includes('writeWithoutResponse')
+  let chunks = 0
+  for (let offset = 0; offset < data.length; offset += size) {
+    await write(characteristic, data.subarray(offset, offset + size), !withResponse)
+    chunks++
+    if (!withResponse && pause) {
+      await delay(pause)
     }
-    if (!Fs.existsSync(file)) {
-      return reject(`File "${file}" not found`)
+    if (debug && chunks % 200 === 0) {
+      log(`  ${Math.round((offset + size) / data.length * 100)}%`)
     }
+  }
+  return { chunks, withResponse }
+}
 
-    // options
-    const { scale, dither, debug } = options
-
-    // process image
-    const image = await prepareImage(file, IMAGE_WIDTH, scale, dither, debug)
-
-    // prepare data
-    const { data, metadata } = await prepareData(image)
-
-    // print
-    // @see https://github.com/davestewart/phomemo-cli/pull/6
-    if (characteristic) {
-      log(`Printing image "${file}" ...`)
-      characteristic.write(data, true)
-    }
-
-    // resolve
-    resolve(metadata)
+function write (characteristic, chunk, withoutResponse) {
+  return new Promise((resolve, reject) => {
+    characteristic.write(chunk, withoutResponse, err => err ? reject(err) : resolve())
   })
+}
+
+function delay (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**

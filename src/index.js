@@ -24,6 +24,10 @@ program
   .option('--scale <size>', 'percent scale at which the image should print (1-100)', '100')
   .option('--dither', 'flag to dither the passed image', false)
 
+  // bluetooth
+  .option('--chunk <bytes>', 'bytes per Bluetooth write; smaller is slower but safer for long images', '128')
+  .option('--chunk-delay <ms>', 'pause between writes when the printer does not acknowledge them', '10')
+
   // dev
   .option('--cache', 'maintain cache folder of printed images', false)
   .option('--debug', 'maintain debug image folder and dump console logs', false)

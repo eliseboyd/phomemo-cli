@@ -2,6 +2,8 @@
 
 > A Node JS package to enabling printing to a Phomemo printer
 
+This is a fork of [davestewart/phomemo-cli](https://github.com/davestewart/phomemo-cli) with one change: **long images print completely.** Upstream hands the printer the whole bitmap in a single Bluetooth write, which overflows the printer's buffer on tall images, so they print half way and stop. This fork streams the data in small acknowledged chunks (`--chunk`, `--chunk-delay` below), and the print server answers once the whole image has reached the printer. It is what [obsidian-md-to-phomemo](https://github.com/eliseboyd/obsidian-md-to-phomemo) prints through.
+
 ## Overview
 
 The [Phomemo M02 S/Pro](https://eu.phomemo.com/products/m02-pro-portable-printer) is pocket-sized, bluetooth thermal label printer:
@@ -147,6 +149,10 @@ image
   --file <path>      path for image to print (default: "")
   --scale <size>     percent scale at which the image should print (1-100) (default: "100")
   --dither           flag to dither the passed image (default: false)
+
+bluetooth
+  --chunk <bytes>    bytes per Bluetooth write; smaller is slower but safer for long images (default: "128")
+  --chunk-delay <ms> pause between writes when the printer does not acknowledge them (default: "10")
 
 development
   --cache            maintain cache folder of printed images (default: false)
