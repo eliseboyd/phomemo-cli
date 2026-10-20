@@ -1,7 +1,7 @@
 import Fs from 'fs'
 import { prepareImage } from './image.js'
 import { log } from './utils.js'
-import { DEFAULT_CHUNK, DEFAULT_CHUNK_DELAY } from './options.js'
+import { DEFAULT_CHUNK, DEFAULT_CHUNK_DELAY, DEFAULT_DENSITY } from './options.js'
 
 // ---------------------------------------------------------------------------------------------------------------------
 // constants
@@ -33,13 +33,13 @@ export async function print (characteristic, file, options) {
   }
 
   // options
-  const { scale, dither, debug, chunk, chunkDelay } = options
+  const { scale, dither, debug, chunk, chunkDelay, density } = options
 
   // process image
   const image = await prepareImage(file, IMAGE_WIDTH, scale, dither, debug)
 
   // prepare data
-  const { data, metadata } = await prepareData(image)
+  const { data, metadata } = await prepareData(image, density)
 
   // print: one job at a time, so two requests can't interleave their bytes on the characteristic
   if (characteristic) {
@@ -49,6 +49,13 @@ export async function print (characteristic, file, options) {
   }
 
   return metadata
+}
+
+/** Darkness byte for the header: 1-15, default DEFAULT_DENSITY. */
+export function clampDensity (density) {
+  const n = Math.round(Number(density))
+  if (!Number.isFinite(n)) return DEFAULT_DENSITY
+  return Math.min(15, Math.max(1, n))
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -111,10 +118,11 @@ function delay (ms) {
 /**
  * Convert Sharp image to printer data
  *
- * @param   {sharp.Sharp}   image     The sharp image
+ * @param   {sharp.Sharp}   image       The sharp image
+ * @param   {number}        [density]   Print darkness 1-15 (how hot the head runs), see clampDensity
  * @returns {Promise<{data:Buffer<ArrayBuffer>, metadata: sharp.Metadata}>}
  */
-async function prepareData (image) {
+export async function prepareData (image, density) {
   // helper function to get pixel RGBA values at specific coordinates
   function getPixelAt (x, y) {
     const pos = (y * width + x) * 4 // 4 channels (RGBA)
@@ -154,11 +162,12 @@ async function prepareData (image) {
   // Justify (0=left, 1=center, 2=right)
   data[index++] = 0
 
-  // End of header
+  // Print density: 1F 11 02 NN. NN is how hot the head runs (the Phomemo app's darkness setting);
+  // upstream always sent 4.
   data[index++] = 31
   data[index++] = 17
   data[index++] = 2
-  data[index++] = 4
+  data[index++] = clampDensity(density)
   // ********
 
   let line = 0

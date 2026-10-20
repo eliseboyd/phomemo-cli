@@ -23,6 +23,7 @@ program
   .option('--file <path>', 'path for image to print', '')
   .option('--scale <size>', 'percent scale at which the image should print (1-100)', '100')
   .option('--dither', 'flag to dither the passed image', false)
+  .option('--density <1-15>', 'print darkness, how hot the head runs (the Phomemo app\'s darkness setting)', '4')
 
   // bluetooth
   .option('--chunk <bytes>', 'bytes per Bluetooth write; smaller is slower but safer for long images', '128')

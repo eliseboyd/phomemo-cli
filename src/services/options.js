@@ -7,10 +7,12 @@
  * @property  {boolean}   [debug]     Whether to dump debug messages
  * @property  {number}    [chunk]       Bytes per Bluetooth write (see print.js)
  * @property  {number}    [chunkDelay]  Pause between unacknowledged writes, ms
+ * @property  {number}    [density]     Print darkness 1-15
  */
 
 export const DEFAULT_CHUNK = 128
 export const DEFAULT_CHUNK_DELAY = 10
+export const DEFAULT_DENSITY = 4
 
 /**
  * Helper function to Parse CLI options or HttpRequest query
@@ -18,7 +20,7 @@ export const DEFAULT_CHUNK_DELAY = 10
  * @param     {object}    options
  * @returns   {Options}
  */
-export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay } = {}) {
+export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay, density } = {}) {
   return {
     scale: num(scale),
     dither: bool(dither),
@@ -26,6 +28,7 @@ export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay }
     debug: bool(debug),
     chunk: num(chunk),
     chunkDelay: num(chunkDelay),
+    density: num(density),
   }
 }
 
@@ -45,6 +48,7 @@ export function mergeOptions (options = {}, query = {}) {
     debug: options.debug,
     chunk: query.chunk ?? options.chunk,
     chunkDelay: query.chunkDelay ?? options.chunkDelay,
+    density: query.density ?? options.density,
   }
 }
 

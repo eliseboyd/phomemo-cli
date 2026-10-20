@@ -2,7 +2,7 @@
 
 > A Node JS package to enabling printing to a Phomemo printer
 
-This is a fork of [davestewart/phomemo-cli](https://github.com/davestewart/phomemo-cli) with one change: **long images print completely.** Upstream hands the printer the whole bitmap in a single Bluetooth write, which overflows the printer's buffer on tall images, so they print half way and stop. This fork streams the data in small acknowledged chunks (`--chunk`, `--chunk-delay` below), and the print server answers once the whole image has reached the printer. It is what [obsidian-md-to-phomemo](https://github.com/eliseboyd/obsidian-md-to-phomemo) prints through.
+This is a fork of [davestewart/phomemo-cli](https://github.com/davestewart/phomemo-cli) with one change: **long images print completely.** Upstream hands the printer the whole bitmap in a single Bluetooth write, which overflows the printer's buffer on tall images, so they print half way and stop. This fork streams the data in small acknowledged chunks (`--chunk`, `--chunk-delay` below), and the print server answers once the whole image has reached the printer. It also exposes the print darkness (`--density`, or `?density=` on the server), which upstream fixes at 4. It is what [obsidian-md-to-phomemo](https://github.com/eliseboyd/obsidian-md-to-phomemo) prints through.
 
 ## Overview
 
@@ -149,6 +149,7 @@ image
   --file <path>      path for image to print (default: "")
   --scale <size>     percent scale at which the image should print (1-100) (default: "100")
   --dither           flag to dither the passed image (default: false)
+  --density <1-15>   print darkness, how hot the head runs (the Phomemo app's darkness setting) (default: "4")
 
 bluetooth
   --chunk <bytes>    bytes per Bluetooth write; smaller is slower but safer for long images (default: "128")
