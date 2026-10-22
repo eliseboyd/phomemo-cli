@@ -54,7 +54,7 @@ export async function print (characteristic, file, options) {
   let cancelled = false
   if (characteristic) {
     const bytes = parts.header.length + parts.blocks.reduce((n, b) => n + b.length, 0) + parts.footer.length
-    log(`Printing image "${file}" (${metadata.width}×${metadata.height}, ${Math.round(bytes / 1024)} KB) ...`)
+    log(`Printing image "${file}" (${metadata.width}×${metadata.height}, ${Math.round(bytes / 1024)} KB, darkness ${clampDensity(density)}, ${parts.blocks.length} block${parts.blocks.length === 1 ? '' : 's'}) ...`)
     const result = await enqueue(token => sendToPrinter(characteristic, parts, { chunk, chunkDelay, debug, token }))
     cancelled = result.cancelled
     log(cancelled ? 'Cancelled' : 'Sent')
