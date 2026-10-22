@@ -90,7 +90,7 @@ test('print() resolves with cancelled: true when cancelled through cancelCurrent
   const file = join(tmpdir(), `phomemo-cli-test-${process.pid}.png`)
   await Sharp({ create: { width: 560, height: 400, channels: 4, background: '#000' } }).png().toFile(file)
   const c = fakeCharacteristic(['write'], n => { if (n === 5) assert.equal(cancelCurrent(), true) })
-  const result = await print(c, file, { chunk: 128, density: 4 })
+  const result = await print(c, file, { chunk: 128, density: 4, blockLines: 64 })
   assert.equal(result.cancelled, true)
   assert.equal(result.height, 400)
   assert.ok(c.writes.length < 400 * 70 / 128)

@@ -93,7 +93,7 @@ You may pass CLI arguments as query strings, for example:
 POST http://localhost:4000/print?scale=478&dither=1
 ```
 
-To stop a print that is running (the printer finishes the block it is in with blank lines, at most 8 mm, and feeds):
+To stop a print that is running. The printer has to finish the raster block it is in with blank lines; with the default single block that is the rest of the image, so a cancel mostly saves ink, not paper. Start with `--block-lines 256` if you want cancels to stop within ~32 mm and can live with a faint white band every 32 mm:
 
 ```
 POST http://localhost:4000/cancel     →  { "cancelled": true }
@@ -160,7 +160,7 @@ image
 bluetooth
   --chunk <bytes>    bytes per Bluetooth write; smaller is slower but safer for long images (default: "128")
   --chunk-delay <ms> pause between writes when the printer does not acknowledge them (default: "10")
-  --block-lines <n>  lines per raster block; smaller makes a cancel cheaper, but white bands between blocks mean go bigger (default: "256")
+  --block-lines <n>  lines per raster block (max 65535 = whole image, no white bands); smaller makes a cancel feed less blank paper (default: "65535")
 
 development
   --cache            maintain cache folder of printed images (default: false)

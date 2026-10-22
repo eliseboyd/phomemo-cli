@@ -12,11 +12,13 @@ export const BYTES_PER_LINE = 70
 export const IMAGE_WIDTH = BYTES_PER_LINE * 8
 
 /**
- * Default lines per raster block (GS v 0 takes up to 65535; upstream used 256). Smaller blocks make a cancel
- * cheaper (the block the printer is in gets padded with blank lines, at most this many) but if the printer
- * pauses between blocks they show as white bands. --block-lines overrides it.
+ * Default lines per raster block: the whole image in one block (GS v 0 takes up to 65535 lines; upstream used
+ * 256). The M02 Pro pauses between blocks while the next one streams in and feeds blank paper meanwhile, which
+ * shows as a white band at every boundary, so one block it is. The cost is a cancel: the printer has to finish
+ * the block it is in, so a cancelled print feeds the rest of the note blank. --block-lines overrides it
+ * (e.g. 256) if a cheap cancel matters more than the bands.
  */
-export const LINES_PER_BLOCK = 256
+export const LINES_PER_BLOCK = 65535
 
 // ---------------------------------------------------------------------------------------------------------------------
 // main functions
