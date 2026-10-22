@@ -12,10 +12,11 @@ export const BYTES_PER_LINE = 70
 export const IMAGE_WIDTH = BYTES_PER_LINE * 8
 
 /**
- * Lines per raster block (GS v 0 takes up to 65535). Small blocks keep a cancel cheap: the printer waits for the
- * rest of the block it is in, so a cancel pads that block with blank lines, at most this many (64 ≈ 8 mm).
+ * Default lines per raster block (GS v 0 takes up to 65535; upstream used 256). Smaller blocks make a cancel
+ * cheaper (the block the printer is in gets padded with blank lines, at most this many) but if the printer
+ * pauses between blocks they show as white bands. --block-lines overrides it.
  */
-export const LINES_PER_BLOCK = 64
+export const LINES_PER_BLOCK = 256
 
 // ---------------------------------------------------------------------------------------------------------------------
 // main functions
@@ -39,13 +40,13 @@ export async function print (characteristic, file, options) {
   }
 
   // options
-  const { scale, dither, debug, chunk, chunkDelay, density } = options
+  const { scale, dither, debug, chunk, chunkDelay, density, blockLines } = options
 
   // process image
   const image = await prepareImage(file, IMAGE_WIDTH, scale, dither, debug)
 
   // prepare data
-  const { parts, metadata } = await prepareData(image, density)
+  const { parts, metadata } = await prepareData(image, density, blockLines)
 
   // print: one job at a time, so two requests can't interleave their bytes on the characteristic
   let cancelled = false
@@ -212,9 +213,11 @@ export const BLOCK_MARKER = 8
  *
  * @param   {sharp.Sharp}   image       The sharp image
  * @param   {number}        [density]   Print darkness 1-15 (how hot the head runs), see clampDensity
+ * @param   {number}        [blockLines] Lines per raster block (default LINES_PER_BLOCK)
  * @returns {Promise<{parts: {header: Buffer, blocks: Buffer[], footer: Buffer}, metadata: sharp.Metadata}>}
  */
-export async function prepareData (image, density) {
+export async function prepareData (image, density, blockLines) {
+  const perBlock = Math.min(65535, Math.max(1, Math.floor(Number(blockLines)) || LINES_PER_BLOCK))
   // helper function to get pixel RGBA values at specific coordinates
   function getPixelAt (x, y) {
     const pos = (y * width + x) * 4 // 4 channels (RGBA)
@@ -254,7 +257,7 @@ export async function prepareData (image, density) {
   let line = 0
   let remaining = height
   while (remaining > 0) {
-    const lines = Math.min(remaining, LINES_PER_BLOCK)
+    const lines = Math.min(remaining, perBlock)
     const block = Buffer.alloc(BLOCK_MARKER + lines * BYTES_PER_LINE, 0)
     let index = 0
     // Print raster bit image
@@ -267,8 +270,8 @@ export async function prepareData (image, density) {
     block[index++] = BYTES_PER_LINE
     block[index++] = 0
     // Number of lines to print in this block.
-    block[index++] = lines - 1
-    block[index++] = 0
+    block[index++] = (lines - 1) & 0xff
+    block[index++] = (lines - 1) >> 8
 
     for (let l = 0; l < lines; l++, line++) {
       for (let x = 0; x < BYTES_PER_LINE; x++) {

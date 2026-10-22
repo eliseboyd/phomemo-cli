@@ -8,6 +8,7 @@
  * @property  {number}    [chunk]       Bytes per Bluetooth write (see print.js)
  * @property  {number}    [chunkDelay]  Pause between unacknowledged writes, ms
  * @property  {number}    [density]     Print darkness 1-15
+ * @property  {number}    [blockLines]  Lines per raster block
  */
 
 export const DEFAULT_CHUNK = 128
@@ -20,7 +21,7 @@ export const DEFAULT_DENSITY = 4
  * @param     {object}    options
  * @returns   {Options}
  */
-export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay, density } = {}) {
+export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay, density, blockLines } = {}) {
   return {
     scale: num(scale),
     dither: bool(dither),
@@ -29,6 +30,7 @@ export function parseOptions ({ scale, dither, cache, debug, chunk, chunkDelay, 
     chunk: num(chunk),
     chunkDelay: num(chunkDelay),
     density: num(density),
+    blockLines: num(blockLines),
   }
 }
 
@@ -49,6 +51,7 @@ export function mergeOptions (options = {}, query = {}) {
     chunk: query.chunk ?? options.chunk,
     chunkDelay: query.chunkDelay ?? options.chunkDelay,
     density: query.density ?? options.density,
+    blockLines: query.blockLines ?? options.blockLines,
   }
 }
 

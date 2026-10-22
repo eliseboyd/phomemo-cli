@@ -160,6 +160,7 @@ image
 bluetooth
   --chunk <bytes>    bytes per Bluetooth write; smaller is slower but safer for long images (default: "128")
   --chunk-delay <ms> pause between writes when the printer does not acknowledge them (default: "10")
+  --block-lines <n>  lines per raster block; smaller makes a cancel cheaper, but white bands between blocks mean go bigger (default: "256")
 
 development
   --cache            maintain cache folder of printed images (default: false)

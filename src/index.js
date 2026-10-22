@@ -28,6 +28,7 @@ program
   // bluetooth
   .option('--chunk <bytes>', 'bytes per Bluetooth write; smaller is slower but safer for long images', '128')
   .option('--chunk-delay <ms>', 'pause between writes when the printer does not acknowledge them', '10')
+  .option('--block-lines <n>', 'lines per raster block; smaller makes a cancel cheaper, but white bands between blocks mean go bigger', '256')
 
   // dev
   .option('--cache', 'maintain cache folder of printed images', false)

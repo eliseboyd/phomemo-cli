@@ -71,14 +71,16 @@ test('chunk and density options come from the CLI or the query string', () => {
 })
 
 test('density goes into the header as 1F 11 02 NN, default 4, clamped to 1-15; blocks hold LINES_PER_BLOCK lines', async () => {
-  const image = Sharp({ create: { width: 560, height: LINES_PER_BLOCK + 2, channels: 4, background: '#fff' } }).png()
+  const image = Sharp({ create: { width: 560, height: 66, channels: 4, background: '#fff' } }).png()
   const { parts: p } = await prepareData(image, 9)
   assert.deepEqual([...p.header].slice(5), [0x1f, 0x11, 0x02, 9])
   assert.deepEqual([...(await prepareData(image, undefined)).parts.header].slice(5), [0x1f, 0x11, 0x02, 4])
-  assert.equal(p.blocks.length, 2)
-  assert.equal(p.blocks[0].length, BLOCK_MARKER + LINES_PER_BLOCK * BYTES_PER_LINE)
-  assert.equal(p.blocks[0][6], LINES_PER_BLOCK - 1)
-  assert.equal(p.blocks[1][6], 1)
+  assert.equal(p.blocks.length, 1)
+  const small = (await prepareData(image, 9, 64)).parts
+  assert.equal(small.blocks.length, 2)
+  assert.equal(small.blocks[0].length, BLOCK_MARKER + 64 * BYTES_PER_LINE)
+  assert.equal(small.blocks[0][6], 63)
+  assert.equal(small.blocks[1][6], 1)
   assert.equal(clampDensity(99), 15)
   assert.equal(clampDensity(0), 1)
   assert.equal(clampDensity('abc'), 4)
