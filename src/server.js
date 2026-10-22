@@ -4,7 +4,7 @@ import express from 'express'
 import multer from 'multer'
 import Sharp from 'sharp'
 import { mergeOptions } from './services/options.js'
-import { print } from './services/print.js'
+import { cancelCurrent, print } from './services/print.js'
 import { log } from './services/utils.js'
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -75,6 +75,18 @@ export function serve (port = 4000, characteristic, options = {}) {
       }
     }
   })
+
+  /**
+   * Cancel the print that is streaming now (and drop queued ones).
+   * The printer finishes the raster block it is in with blank lines (≤ 8 mm) and feeds.
+   */
+  const cancel = (req, res) => {
+    const cancelled = cancelCurrent()
+    log(cancelled ? 'Cancelling current print' : 'Cancel: nothing printing')
+    res.json({ cancelled })
+  }
+  app.post('/cancel', cancel)
+  app.get('/cancel', cancel)
 
   /**
    * Print cached file

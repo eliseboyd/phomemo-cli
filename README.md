@@ -93,6 +93,12 @@ You may pass CLI arguments as query strings, for example:
 POST http://localhost:4000/print?scale=478&dither=1
 ```
 
+To stop a print that is running (the printer finishes the block it is in with blank lines, at most 8 mm, and feeds):
+
+```
+POST http://localhost:4000/cancel     →  { "cancelled": true }
+```
+
 Note that any CLI parameters and query string values will be combined in the final print function, so the following would print a dithered image at 50%:
 
 ```
